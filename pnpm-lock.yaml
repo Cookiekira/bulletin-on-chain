@@ -123,6 +123,9 @@ importers:
       hardhat:
         specifier: ^2.22.16
         version: 2.22.16(ts-node@10.9.2(@types/node@20.17.8)(typescript@5.7.2))(typescript@5.7.2)
+      network-helpers:
+        specifier: link:@nomicfoundation/hardhat-toolbox-viem/network-helpers
+        version: link:@nomicfoundation/hardhat-toolbox-viem/network-helpers
       postcss:
         specifier: ^8.4.49
         version: 8.4.49

@@ -1,6 +1,6 @@
 export type Bulletin = {
   id: bigint
-  address: string
+  author: string
   content: string
   timestamp: bigint
   isDeleted: boolean

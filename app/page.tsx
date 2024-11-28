@@ -1,7 +1,7 @@
 'use client'
 
 import '@rainbow-me/rainbowkit/styles.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -56,33 +56,31 @@ export default function Home() {
     }
   }
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
+      if (!publicClient) {
+        return
+      }
+
       const contract = getContract({
         address: BULLETIN_ADDRESS,
         abi: BulletinABI.abi,
         client: publicClient
       })
 
-      const postCount = await contract.read.postCount()
+      const postCount = (await contract.read.postCount()) as bigint
       const fetchedPosts: Bulletin[] = []
 
       for (let i = 1n; i <= postCount; i++) {
-        const post = await contract.read.getPost([i])
-        fetchedPosts.push({
-          id: post.id,
-          address: post.author,
-          content: post.content,
-          timestamp: post.timestamp,
-          isDeleted: post.isDeleted
-        })
+        const post = (await contract.read.getPost([i])) as Bulletin
+        fetchedPosts.push(post)
       }
 
       setPosts(fetchedPosts.reverse())
     } catch (error) {
       console.error('Error fetching posts:', error)
     }
-  }
+  }, [BULLETIN_ADDRESS, publicClient])
 
   const deletePost = async (id: bigint) => {
     try {
@@ -121,6 +119,9 @@ export default function Home() {
 
   useEffect(() => {
     void fetchPosts()
+    if (!publicClient) {
+      return
+    }
     // Setup event listener for new posts
     const contract = getContract({
       address: BULLETIN_ADDRESS,
@@ -132,7 +133,7 @@ export default function Home() {
       {},
       {
         onLogs: () => {
-          fetchPosts()
+          void fetchPosts()
         }
       }
     )
@@ -140,7 +141,7 @@ export default function Home() {
     return () => {
       unwatch()
     }
-  }, [publicClient])
+  }, [BULLETIN_ADDRESS, fetchPosts, publicClient])
 
   return (
     <main className="container mx-auto p-4">
@@ -171,13 +172,13 @@ export default function Home() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="mb-2 text-sm text-gray-500">
-                    {post.address.slice(0, 6)}...{post.address.slice(-4)}
+                    {post.author.slice(0, 6)}...{post.author.slice(-4)}
                   </p>
                   <p className={post.isDeleted ? 'italic text-gray-400' : ''}>
                     {post.isDeleted ? 'This post has been deleted' : post.content}
                   </p>
                 </div>
-                {address === post.address && !post.isDeleted && (
+                {address === post.author && !post.isDeleted && (
                   <Button variant="outline" size="sm" onClick={() => deletePost(post.id)}>
                     Delete
                   </Button>

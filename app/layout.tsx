@@ -1,34 +1,24 @@
 import type { Metadata } from 'next'
-import localFont from 'next/font/local'
+import { Inter } from 'next/font/google'
 import './globals.css'
+import { Web3Provider } from '@/providers/web3'
 import { Toaster } from '@/components/ui/toaster'
 
-const geistSans = localFont({
-  src: './fonts/GeistVF.woff',
-  variable: '--font-geist-sans',
-  weight: '100 900'
-})
-const geistMono = localFont({
-  src: './fonts/GeistMonoVF.woff',
-  variable: '--font-geist-mono',
-  weight: '100 900'
-})
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Bulletin Board',
-  description: 'On-chain bulletin board application'
+  description: 'On-chain bulletin board'
 }
 
-export default function RootLayout({
-  children
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: { readonly children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <Toaster />
+      <body className={`${inter.className} antialiased`}>
+        <Web3Provider>
+          {children}
+          <Toaster />
+        </Web3Provider>
       </body>
     </html>
   )

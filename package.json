@@ -13,6 +13,8 @@
     "@nomicfoundation/hardhat-ignition": "^0.15.8",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.2",
+    "@rainbow-me/rainbowkit": "^2.2.0",
+    "@tanstack/react-query": "^5.61.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.462.0",
@@ -21,7 +23,8 @@
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "viem": "^2.21.51"
+    "viem": "^2.21.51",
+    "wagmi": "^2.13.2"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",

@@ -76,6 +76,10 @@ const config = tseslint.config(
           allowConstantLoopConditions: true
         }
       ],
+      // Due to Web3 library usage
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
 
       '@typescript-eslint/consistent-type-exports': ['error', { fixMixedExportsWithInlineTypeSpecifier: true }],
       '@typescript-eslint/consistent-type-definitions': 'off',

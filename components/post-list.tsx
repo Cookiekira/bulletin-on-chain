@@ -1,20 +1,18 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getContract } from 'viem'
-import BulletinABI from '@/artifacts/contracts/BulletinBoard.sol/BulletinBoard.json'
 import type { Bulletin, ContractConfig } from '@/app/types'
-import { useAccount, useInfiniteReadContracts, usePublicClient, useReadContract } from 'wagmi'
-import { invariant } from 'foxact/invariant'
+import { useAccount, useInfiniteReadContracts, useReadContract } from 'wagmi'
+import type { ContractFunctionParameters } from 'viem'
 
 const POSTS_PER_PAGE = 10
 
 export type PostListProps = Readonly<{
   contractConfig: ContractConfig
-  onDeletePost: (id: bigint) => Promise<void>
+  onDeletePostAction: (id: bigint) => Promise<void>
 }>
 
 /**
@@ -26,59 +24,62 @@ export type PostListProps = Readonly<{
  * Posts are fetched in pages, with newer posts appearing first.
  * Deleted posts show a placeholder message instead of content.
  */
-export function PostList({ contractConfig, onDeletePost }: PostListProps) {
-  const [posts, setPosts] = useState<Bulletin[]>([])
-  const [hasMore, setHasMore] = useState(false)
-  const [page, setPage] = useState(1)
+export function PostList({ contractConfig, onDeletePostAction }: PostListProps) {
+  const [hasMore, setHasMore] = useState(true)
   const { address } = useAccount()
-  const publicClient = usePublicClient()
 
-  const fetchPosts = useCallback(
-    async (pageNum: number) => {
-      try {
-        invariant(publicClient, 'Public client is not available')
-        const contract = getContract({
-          address: contractConfig.address,
-          abi: BulletinABI.abi,
-          client: publicClient
+  const { data: postCount } = useReadContract({
+    ...contractConfig,
+    functionName: 'postCount'
+  })
+
+  const { data: postData, fetchNextPage } = useInfiniteReadContracts({
+    cacheKey: 'posts',
+    contracts(pageParam) {
+      if (!postCount) return [] satisfies ContractFunctionParameters[]
+      const start = postCount - BigInt(pageParam * POSTS_PER_PAGE)
+
+      const posts = []
+      for (let index = 0; index < POSTS_PER_PAGE; index++) {
+        const postId = start - BigInt(index)
+        if (postId <= 0n) break
+        posts.push({
+          ...contractConfig,
+          functionName: 'getPost',
+          args: [postId]
         })
-
-        const postCount = (await contract.read.postCount()) as bigint
-        const start = postCount - BigInt((pageNum - 1) * POSTS_PER_PAGE)
-        const end = start - BigInt(POSTS_PER_PAGE)
-        const fetchedPosts: Bulletin[] = []
-
-        for (let i = start; i > end && i > 0n; i--) {
-          console.log('Fetching post:', i, pageNum)
-          const post = (await contract.read.getPost([i])) as Bulletin
-          fetchedPosts.push(post)
-        }
-
-        if (pageNum === 1) {
-          setPosts(fetchedPosts)
-        } else {
-          setPosts((prev) => [...prev, ...fetchedPosts])
-        }
-
-        setHasMore(end > 0n)
-      } catch (error) {
-        console.error('Error fetching posts:', error)
       }
+
+      // Hasmore is set to false when the last page is reached
+      setHasMore(start > POSTS_PER_PAGE)
+
+      return posts
     },
-    [contractConfig.address, publicClient]
-  )
+    query: {
+      enabled: Boolean(postCount),
+      initialPageParam: 0,
+      getNextPageParam: (_lastPage, _allPages, lastPageParam) => {
+        console.log('Last page param:', lastPageParam)
+        if (postCount && (lastPageParam + 1) * POSTS_PER_PAGE >= postCount) {
+          return null
+        }
+        return lastPageParam + 1
+      }
+    }
+  })
 
   const createObserver = useCallback(
     (node: HTMLDivElement) => {
       const observer = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting && hasMore) {
-            setPage((prev) => prev + 1)
+            console.log('Intersection observed')
+            void fetchNextPage()
           }
         },
         {
           root: null,
-          rootMargin: '20px',
+          rootMargin: '0px',
           threshold: 1.0
         }
       )
@@ -90,12 +91,11 @@ export function PostList({ contractConfig, onDeletePost }: PostListProps) {
         observer.disconnect()
       }
     },
-    [hasMore]
+    [fetchNextPage, hasMore]
   )
 
-  useEffect(() => {
-    void fetchPosts(page)
-  }, [fetchPosts, page])
+  //@ts-expect-error - Bug in wagmi types
+  const posts = (postData?.pages.flat().map((page) => page.result as Bulletin) ?? []) as Bulletin[]
 
   return (
     <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
@@ -112,7 +112,7 @@ export function PostList({ contractConfig, onDeletePost }: PostListProps) {
                 </p>
               </div>
               {address === post.author && !post.isDeleted && (
-                <Button variant="outline" size="sm" onClick={() => onDeletePost(post.id)}>
+                <Button variant="outline" size="sm" onClick={() => onDeletePostAction(post.id)}>
                   Delete
                 </Button>
               )}

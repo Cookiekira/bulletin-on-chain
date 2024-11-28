@@ -1,18 +1,17 @@
 'use client'
 
 import '@rainbow-me/rainbowkit/styles.css'
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { getContract } from 'viem'
 import BulletinABI from '../artifacts/contracts/BulletinBoard.sol/BulletinBoard.json'
-import { contractConfig, type Bulletin } from './types'
+import { contractConfig } from './types'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi'
 import Loading from './loading'
-import { invariant } from 'foxact/invariant'
 import { PostList } from '@/components/post-list'
 
 export default function Home() {
@@ -58,27 +57,27 @@ export default function Home() {
     }
   }
 
-  const fetchPosts = useCallback(async () => {
-    try {
-      invariant(publicClient, 'Public client is not available')
-      const contract = getContract({
-        address: BULLETIN_ADDRESS,
-        abi: BulletinABI.abi,
-        client: publicClient
-      })
+  // const fetchPosts = useCallback(async () => {
+  //   try {
+  //     invariant(publicClient, 'Public client is not available')
+  //     const contract = getContract({
+  //       address: BULLETIN_ADDRESS,
+  //       abi: BulletinABI.abi,
+  //       client: publicClient
+  //     })
 
-      const postCount = (await contract.read.postCount()) as bigint
-      const fetchedPosts: Bulletin[] = []
+  //     const postCount = (await contract.read.postCount()) as bigint
+  //     const fetchedPosts: Bulletin[] = []
 
-      for (let i = 1n; i <= postCount; i++) {
-        const post = (await contract.read.getPost([i])) as Bulletin
-        fetchedPosts.push(post)
-      }
+  //     for (let i = 1n; i <= postCount; i++) {
+  //       const post = (await contract.read.getPost([i])) as Bulletin
+  //       fetchedPosts.push(post)
+  //     }
 
-    } catch (error) {
-      console.error('Error fetching posts:', error)
-    }
-  }, [BULLETIN_ADDRESS, publicClient])
+  //   } catch (error) {
+  //     console.error('Error fetching posts:', error)
+  //   }
+  // }, [BULLETIN_ADDRESS, publicClient])
 
   const deletePost = async (id: bigint) => {
     try {
@@ -105,7 +104,7 @@ export default function Home() {
         description: 'Post deleted successfully!'
       })
 
-      await fetchPosts()
+      // await fetchPosts()
     } catch {
       toast({
         title: 'Error',
@@ -115,26 +114,26 @@ export default function Home() {
     }
   }
 
-  useEffect(() => {
-    invariant(publicClient, 'Public client is not available')
-    void fetchPosts()
-    // Setup event listener for new posts
-    const contract = getContract({
-      address: BULLETIN_ADDRESS,
-      abi: BulletinABI.abi,
-      client: publicClient
-    })
+  // useEffect(() => {
+  //   invariant(publicClient, 'Public client is not available')
+  //   // void fetchPosts()
+  //   // Setup event listener for new posts
+  //   const contract = getContract({
+  //     address: BULLETIN_ADDRESS,
+  //     abi: BulletinABI.abi,
+  //     client: publicClient
+  //   })
 
-    const unwatch = contract.watchEvent.PostCreated({
-      onLogs: () => {
-        void fetchPosts()
-      }
-    })
+  //   const unwatch = contract.watchEvent.PostCreated({
+  //     onLogs: () => {
+  //       // void fetchPosts()
+  //     }
+  //   })
 
-    return () => {
-      unwatch()
-    }
-  }, [BULLETIN_ADDRESS, fetchPosts, publicClient])
+  //   return () => {
+  //     unwatch()
+  //   }
+  // }, [BULLETIN_ADDRESS, publicClient])
 
   if (!publicClient) {
     return <Loading />
@@ -162,7 +161,7 @@ export default function Home() {
           </div>
         </CardContent>
       </Card>
-      <PostList contractConfig={contractConfig} onDeletePost={deletePost} />
+      <PostList contractConfig={contractConfig} onDeletePostAction={deletePost} />
     </main>
   )
 }

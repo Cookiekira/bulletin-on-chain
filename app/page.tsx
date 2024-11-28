@@ -8,15 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { getContract } from 'viem'
 import BulletinABI from '../artifacts/contracts/BulletinBoard.sol/BulletinBoard.json'
-import type { Bulletin } from './bulletin'
+import { contractConfig, type Bulletin } from './types'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi'
+import Loading from './loading'
+import { invariant } from 'foxact/invariant'
+import { PostList } from '@/components/post-list'
 
 export default function Home() {
   const [content, setContent] = useState('')
-  const [posts, setPosts] = useState<Bulletin[]>([])
   const { toast } = useToast()
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
   const BULLETIN_ADDRESS = process.env.NEXT_PUBLIC_BULLETIN_ADDRESS as `0x${string}`
@@ -58,10 +60,7 @@ export default function Home() {
 
   const fetchPosts = useCallback(async () => {
     try {
-      if (!publicClient) {
-        return
-      }
-
+      invariant(publicClient, 'Public client is not available')
       const contract = getContract({
         address: BULLETIN_ADDRESS,
         abi: BulletinABI.abi,
@@ -76,7 +75,6 @@ export default function Home() {
         fetchedPosts.push(post)
       }
 
-      setPosts(fetchedPosts.reverse())
     } catch (error) {
       console.error('Error fetching posts:', error)
     }
@@ -118,10 +116,8 @@ export default function Home() {
   }
 
   useEffect(() => {
+    invariant(publicClient, 'Public client is not available')
     void fetchPosts()
-    if (!publicClient) {
-      return
-    }
     // Setup event listener for new posts
     const contract = getContract({
       address: BULLETIN_ADDRESS,
@@ -129,19 +125,20 @@ export default function Home() {
       client: publicClient
     })
 
-    const unwatch = contract.watchEvent.PostCreated(
-      {},
-      {
-        onLogs: () => {
-          void fetchPosts()
-        }
+    const unwatch = contract.watchEvent.PostCreated({
+      onLogs: () => {
+        void fetchPosts()
       }
-    )
+    })
 
     return () => {
       unwatch()
     }
   }, [BULLETIN_ADDRESS, fetchPosts, publicClient])
+
+  if (!publicClient) {
+    return <Loading />
+  }
 
   return (
     <main className="container mx-auto p-4">
@@ -165,29 +162,7 @@ export default function Home() {
           </div>
         </CardContent>
       </Card>
-      <div className="mx-auto mt-8 max-w-2xl">
-        {posts.map((post) => (
-          <Card key={post.id.toString()} className="mb-4">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="mb-2 text-sm text-gray-500">
-                    {post.author.slice(0, 6)}...{post.author.slice(-4)}
-                  </p>
-                  <p className={post.isDeleted ? 'italic text-gray-400' : ''}>
-                    {post.isDeleted ? 'This post has been deleted' : post.content}
-                  </p>
-                </div>
-                {address === post.author && !post.isDeleted && (
-                  <Button variant="outline" size="sm" onClick={() => deletePost(post.id)}>
-                    Delete
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <PostList contractConfig={contractConfig} onDeletePost={deletePost} />
     </main>
   )
 }

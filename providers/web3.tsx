@@ -2,9 +2,10 @@
 
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { sepolia } from 'wagmi/chains'
+import { hardhat, sepolia } from 'wagmi/chains'
 import { WagmiProvider } from 'wagmi'
 import '@rainbow-me/rainbowkit/styles.css'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
   throw new Error('Missing NEXT_PUBLIC_PROJECT_ID')
@@ -25,7 +26,8 @@ const config = getDefaultConfig({
           http: [process.env.NEXT_PUBLIC_RPC_URL, sepolia.rpcUrls.default.http[0]]
         }
       }
-    }
+    },
+    ...(process.env.NODE_ENV === 'development' ? [hardhat] : [])
   ],
   ssr: true
 })
@@ -37,6 +39,7 @@ export function Web3Provider({ children }: { readonly children: React.ReactNode 
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>{children}</RainbowKitProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </WagmiProvider>
   )

@@ -9,6 +9,12 @@ import { useQueryClient, type QueryKey } from '@tanstack/react-query'
 
 export const postsQueryKeyAtom = atom<QueryKey>()
 export const postCountQueryKeyAtom = atom<QueryKey>()
+export const pendingNewPostsAtom = atom<
+  {
+    identifier: string
+    content: string
+  }[]
+>([])
 
 export function usePostStore() {
   const POSTS_PER_PAGE = 10
@@ -57,20 +63,6 @@ export function usePostStore() {
     setPostCountQueryKeyAtom(postCountQueryKey)
   }
 
-  // useWatchContractEvent({
-  //   ...contractConfig,
-  //   eventName: 'PostCreated',
-  //   async onLogs(logs) {
-  //     console.log('PostCreated event', logs)
-  //     if (!postCount || !logs[0]?.args?.id) return
-  //     if (logs[0].args.id > postCount) {
-  //       setNewPostAvailable(true)
-  //       await queryClient.invalidateQueries({ queryKey: postCountQueryKey })
-  //       await queryClient.invalidateQueries({ queryKey: postsQueryKey })
-  //     }
-  //   }
-  // })
-
   // @ts-expect-error - Wagmi types are incorrect
   const posts = (postData?.pages.flat().flatMap((page) => page.result as Bulletin[]) ?? []) as Bulletin[]
 
@@ -112,6 +104,7 @@ export function useCreatePost() {
           }
         }
       )
+      return identifier
     },
     [createPostMutation, toast]
   )

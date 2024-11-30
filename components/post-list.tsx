@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { useDeletePost, usePostStore, useInvalidatePosts } from '@/store/use-post-store'
+import { useDeletePost, usePostStore, useInvalidatePosts, pendingNewPostsAtom } from '@/store/use-post-store'
 import { formatDistanceToNow } from 'date-fns'
+import { useAtom } from 'jotai'
 import { memo, useCallback, useState } from 'react'
 import { useAccount, useWatchContractEvent } from 'wagmi'
 
@@ -21,14 +22,17 @@ import { useAccount, useWatchContractEvent } from 'wagmi'
  * Deleted posts show a placeholder message instead of content.
  */
 export function PostList() {
-  const { hasMore, fetchNextPosts, posts } = usePostStore()
+  const { hasMore, fetchNextPosts, posts, postCount } = usePostStore()
+  const [pendingNewPosts, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
+  const [isNewPostAvailable, setNewPostAvailable] = useState(false)
+  const invalidatePosts = useInvalidatePosts()
 
   const createObserver = useCallback(
     (node: HTMLDivElement) => {
       const observer = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting && hasMore) {
-            console.log('Intersection observed')
+            // console.log('Intersection observed')
             void fetchNextPosts()
           }
         },
@@ -48,15 +52,28 @@ export function PostList() {
     [fetchNextPosts, hasMore]
   )
 
-  // if (postCount === BigInt(0) && pendingPosts.length === 0) {
-  //   return (
-  //     <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
-  //       <div className="flex justify-center">
-  //         <p className="text-gray-500">No posts yet</p>
-  //       </div>
-  //     </ScrollArea>
-  //   )
-  // }
+  useWatchContractEvent({
+    ...contractConfig,
+    eventName: 'PostCreated',
+    async onLogs(logs) {
+      // console.log('New post created', logs)
+      // * Check if the new post has already been fetched
+      if (logs.every((log) => posts.some((post) => post.id === log.args.id))) return
+      await invalidatePosts()
+      // * Filter out pending posts that have been created
+      setPendingNewPosts((prev) => prev.filter((post) => !logs.some((log) => log.args.identifier === post.identifier)))
+    }
+  })
+
+  if (postCount === BigInt(0) && pendingNewPosts.length === 0) {
+    return (
+      <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
+        <div className="flex justify-center">
+          <p className="text-gray-500">No posts yet</p>
+        </div>
+      </ScrollArea>
+    )
+  }
 
   return (
     <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
@@ -69,9 +86,9 @@ export function PostList() {
         </div>
       )} */}
 
-      {/* {pendingPosts.map((post) => (
+      {pendingNewPosts.map((post) => (
         <PendingPost key={post.identifier} content={post.content} />
-      ))} */}
+      ))}
 
       {posts.map((post) => (
         <Post key={post.id.toString()} post={post} />
@@ -115,6 +132,7 @@ const Post = memo(
       ...contractConfig,
       eventName: 'PostDeleted',
       async onLogs(logs) {
+        console.log('Post deleted', logs[0].args)
         if (logs[0]?.args?.id === post.id) {
           if (isDeletePending) {
             await invalidatePosts()
@@ -185,7 +203,7 @@ const PendingPost = memo(
                 <p className="text-sm text-gray-500">
                   {address.slice(0, 6)}...{address.slice(-4)}(You)
                 </p>
-                <span className="text-xs text-gray-400">{formatDistanceToNow(new Date(), { addSuffix: true })}</span>
+                <span className="text-xs text-gray-400">Creating post...</span>
               </div>
               <p className="italic text-gray-400">{content}</p>
             </div>

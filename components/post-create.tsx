@@ -3,14 +3,17 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useCreatePost } from '@/store/use-post-store'
+import { pendingNewPostsAtom, useCreatePost } from '@/store/use-post-store'
+import { useAtom } from 'jotai'
 
 export function PostCreate() {
   const [content, setContent] = useState('')
   const { createPost, isCreatingPost } = useCreatePost()
+  const [, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
 
   const handleCreatePost = () => {
-    createPost(content)
+    const identifier = createPost(content)
+    setPendingNewPosts((prev) => [{ identifier, content }, ...prev])
     setContent('')
   }
 

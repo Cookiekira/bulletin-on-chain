@@ -6,12 +6,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { useDeletePost, usePostStore, postsQueryKeyAtom } from '@/store/use-post-store'
+import { useDeletePost, usePostStore, useInvalidatePosts } from '@/store/use-post-store'
 import { formatDistanceToNow } from 'date-fns'
 import { memo, useCallback, useState } from 'react'
 import { useAccount, useWatchContractEvent } from 'wagmi'
-import { useQueryClient } from '@tanstack/react-query'
-import { useAtom } from 'jotai'
 
 /**
  * Renders a scrollable list of posts with infinite loading functionality.
@@ -98,8 +96,7 @@ const Post = memo(
     const [copied, setCopied] = useState(false)
     const { deletePost, isDeletingPost } = useDeletePost()
     const [isDeletePending, setIsDeletePending] = useState(false)
-    const queryClient = useQueryClient()
-    const [postsQueryKey] = useAtom(postsQueryKeyAtom)
+    const invalidatePosts = useInvalidatePosts()
 
     const handleCopyAddress = useCallback(() => {
       void navigator.clipboard.writeText(post.author)
@@ -119,7 +116,10 @@ const Post = memo(
       eventName: 'PostDeleted',
       async onLogs(logs) {
         if (logs[0]?.args?.id === post.id) {
-          if (isDeletePending) await queryClient.invalidateQueries({ queryKey: postsQueryKey })
+          if (isDeletePending) {
+            await invalidatePosts()
+          }
+
           setIsDeletePending(false)
         }
       }

@@ -5,9 +5,10 @@ import { nanoid } from 'nanoid'
 import { useCallback } from 'react'
 import { useAccount, useInfiniteReadContracts, useReadContract, useWriteContract } from 'wagmi'
 import { atom, useAtom } from 'jotai'
-import type { QueryKey } from '@tanstack/react-query'
+import { useQueryClient, type QueryKey } from '@tanstack/react-query'
 
 export const postsQueryKeyAtom = atom<QueryKey>()
+export const postCountQueryKeyAtom = atom<QueryKey>()
 
 export function usePostStore() {
   const POSTS_PER_PAGE = 10
@@ -47,9 +48,13 @@ export function usePostStore() {
     }
   })
 
-  const [postCountQueryKeyAtom, setPostsQueryKeyAtom] = useAtom(postsQueryKeyAtom)
-  if (!postCountQueryKeyAtom) {
+  const [_postsQueryKeyAtom, setPostsQueryKeyAtom] = useAtom(postsQueryKeyAtom)
+  const [_postCountQueryKeyAtom, setPostCountQueryKeyAtom] = useAtom(postCountQueryKeyAtom)
+  if (!_postsQueryKeyAtom) {
     setPostsQueryKeyAtom(postsQueryKey)
+  }
+  if (!_postCountQueryKeyAtom) {
+    setPostCountQueryKeyAtom(postCountQueryKey)
   }
 
   // useWatchContractEvent({
@@ -63,18 +68,6 @@ export function usePostStore() {
   //       await queryClient.invalidateQueries({ queryKey: postCountQueryKey })
   //       await queryClient.invalidateQueries({ queryKey: postsQueryKey })
   //     }
-  //   }
-  // })
-
-  // useWatchContractEvent({
-  //   ...contractConfig,
-  //   eventName: 'PostDeleted',
-  //   async onLogs(logs) {
-  //     console.log('PostDeleted event', logs)
-  //     if (!postCount || !logs[0]?.args?.id) return
-
-  //     await queryClient.invalidateQueries({ queryKey: postCountQueryKey })
-  //     await queryClient.invalidateQueries({ queryKey: postsQueryKey })
   //   }
   // })
 
@@ -153,4 +146,15 @@ export function useDeletePost() {
   )
 
   return { deletePost, isDeletingPost }
+}
+
+export function useInvalidatePosts() {
+  const queryClient = useQueryClient()
+  const [postCountQueryKey] = useAtom(postCountQueryKeyAtom)
+  const [postsQueryKey] = useAtom(postsQueryKeyAtom)
+
+  return useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: postCountQueryKey })
+    await queryClient.invalidateQueries({ queryKey: postsQueryKey })
+  }, [postCountQueryKey, postsQueryKey, queryClient])
 }

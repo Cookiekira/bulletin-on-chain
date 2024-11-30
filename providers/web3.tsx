@@ -29,7 +29,6 @@ const config = getDefaultConfig({
     },
     ...(process.env.NODE_ENV === 'development' ? [hardhat] : [])
   ],
-  ssr: true
 })
 
 const queryClient = new QueryClient()

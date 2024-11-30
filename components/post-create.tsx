@@ -1,34 +1,18 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useWriteContract } from 'wagmi'
-import { contractConfig } from '@/app/types'
+import { usePostStore } from '@/store/use-post-store'
 
 export function PostCreate() {
   const [content, setContent] = useState('')
-  const { toast } = useToast()
+  const { createPost } = usePostStore()
 
-  const { writeContract } = useWriteContract({
-    mutation: {
-      onError: () => {
-        toast({
-          title: 'Error',
-          description: 'Failed to create post',
-          variant: 'destructive'
-        })
-      }
-    }
-  })
-  const createPost = useCallback(() => {
-    writeContract({
-      ...contractConfig,
-      functionName: 'createPost',
-      args: [content]
-    })
-  }, [content, writeContract])
+  const handleCreatePost = () => {
+    createPost(content)
+    setContent('')
+  }
 
   return (
     <div className="flex gap-4">
@@ -39,7 +23,7 @@ export function PostCreate() {
           setContent(e.target.value)
         }}
       />
-      <Button onClick={createPost}>Post</Button>
+      <Button onClick={handleCreatePost}>Post</Button>
     </div>
   )
 }

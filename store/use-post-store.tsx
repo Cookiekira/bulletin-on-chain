@@ -2,7 +2,7 @@ import type { Bulletin } from '@/app/types'
 import { contractConfig } from '@/app/types'
 import { useToast } from '@/hooks/use-toast'
 import { useCallback, useState } from 'react'
-import { useInfiniteReadContracts, useReadContract, useWatchContractEvent, useWriteContract } from 'wagmi'
+import { useAccount, useInfiniteReadContracts, useReadContract, useWatchContractEvent, useWriteContract } from 'wagmi'
 import type { ContractFunctionParameters } from 'viem'
 
 export function usePostStore() {
@@ -11,6 +11,7 @@ export function usePostStore() {
   const { toast } = useToast()
 
   const [hasMore, setHasMore] = useState(true)
+  const { address } = useAccount()
 
   const { data: postCount } = useReadContract({
     ...contractConfig,
@@ -148,6 +149,7 @@ export function usePostStore() {
     postCount,
     posts,
     refetchPosts,
-    isNewPostAvailable
+    isNewPostAvailable,
+    address
   }
 }

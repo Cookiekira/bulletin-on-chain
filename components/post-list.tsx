@@ -21,7 +21,7 @@ import { formatDistanceToNow } from 'date-fns'
  * Deleted posts show a placeholder message instead of content.
  */
 export function PostList() {
-  const { hasMore, fetchNextPosts, isNewPostAvailable, posts } = usePostStore()
+  const { hasMore, fetchNextPosts, isNewPostAvailable, posts, address, postCount } = usePostStore()
 
   const createObserver = useCallback(
     (node: HTMLDivElement) => {
@@ -48,6 +48,16 @@ export function PostList() {
     [fetchNextPosts, hasMore]
   )
 
+  if(postCount === BigInt(0)) {
+    return (
+      <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
+        <div className="flex justify-center">
+          <p className="text-gray-500">No posts yet</p>
+        </div>
+      </ScrollArea>
+    )
+  }
+
   return (
     <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
       {isNewPostAvailable && (
@@ -59,7 +69,7 @@ export function PostList() {
         </div>
       )}
 
-      {/* <Post key={optimisticPost.id.toString()} post={optimisticPost} /> */}
+      {/* <PendingPost content="This is a pending post" /> */}
 
       {posts.map((post) => (
         <Post key={post.id.toString()} post={post} />
@@ -87,7 +97,9 @@ const Post = memo(
     const handleCopyAddress = useCallback(() => {
       void navigator.clipboard.writeText(post.author)
       setCopied(true)
-      setTimeout(() => { setCopied(false); }, 2000)
+      setTimeout(() => {
+        setCopied(false)
+      }, 2000)
     }, [post.author])
 
     return (
@@ -99,11 +111,12 @@ const Post = memo(
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <p 
+                      <p
                         onClick={handleCopyAddress}
                         className="cursor-pointer text-sm text-gray-500 hover:text-gray-700"
                       >
                         {post.author.slice(0, 6)}...{post.author.slice(-4)}
+                        {address === post.author && '(You)'}
                       </p>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -124,6 +137,35 @@ const Post = memo(
                 Delete
               </Button>
             )}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+)
+
+const PendingPost = memo(
+  ({
+    content
+  }: Readonly<{
+    content: string
+  }>) => {
+    const { address } = useAccount()
+    if (!address) return null
+
+    return (
+      <Card className="mb-4 animate-pulse">
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <p className="text-sm text-gray-500">
+                  {address.slice(0, 6)}...{address.slice(-4)}(You)
+                </p>
+                <span className="text-xs text-gray-400">{formatDistanceToNow(new Date(), { addSuffix: true })}</span>
+              </div>
+              <p className="italic text-gray-400">{content}</p>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { usePostStore } from '@/store/use-post-store'
+import { useCreatePost } from '@/store/use-post-store'
 
 export function PostCreate() {
   const [content, setContent] = useState('')
-  const { createPost } = usePostStore()
+  const { createPost, isCreatingPost } = useCreatePost()
 
   const handleCreatePost = () => {
     createPost(content)
@@ -23,7 +23,9 @@ export function PostCreate() {
           setContent(e.target.value)
         }}
       />
-      <Button onClick={handleCreatePost}>Post</Button>
+      <Button onClick={handleCreatePost} disabled={isCreatingPost}>
+        Post
+      </Button>
     </div>
   )
 }

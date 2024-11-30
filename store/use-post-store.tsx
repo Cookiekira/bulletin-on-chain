@@ -1,16 +1,20 @@
 import type { Bulletin } from '@/app/types'
 import { contractConfig } from '@/app/types'
 import { useToast } from '@/hooks/use-toast'
-import { useCallback, useState } from 'react'
-import { useAccount, useInfiniteReadContracts, useReadContract, useWatchContractEvent, useWriteContract } from 'wagmi'
+import { nanoid } from 'nanoid'
+import { useCallback } from 'react'
+import { useAccount, useInfiniteReadContracts, useReadContract, useWriteContract } from 'wagmi'
+import { atom, useAtom } from 'jotai'
+import type { QueryKey } from '@tanstack/react-query'
+
+export const postsQueryKeyAtom = atom<QueryKey>()
 
 export function usePostStore() {
   const POSTS_PER_PAGE = 10
 
-  const { toast } = useToast()
   const { address } = useAccount()
 
-  const { data: postCount } = useReadContract({
+  const { data: postCount, queryKey: postCountQueryKey } = useReadContract({
     ...contractConfig,
     functionName: 'postCount'
   })
@@ -19,7 +23,7 @@ export function usePostStore() {
     data: postData,
     fetchNextPage: fetchNextPosts,
     error: fetchPostsError,
-    refetch: refetchPosts
+    queryKey: postsQueryKey
   } = useInfiniteReadContracts({
     cacheKey: 'posts',
     contracts(pageParam) {
@@ -35,7 +39,7 @@ export function usePostStore() {
       enabled: Boolean(postCount),
       initialPageParam: 1,
       getNextPageParam: (_lastPage, _allPages, lastPageParam) => {
-        if (postCount && (lastPageParam + 1) * POSTS_PER_PAGE >= postCount) {
+        if (postCount && lastPageParam * POSTS_PER_PAGE >= postCount) {
           return null
         }
         return lastPageParam + 1
@@ -43,52 +47,69 @@ export function usePostStore() {
     }
   })
 
-  if (fetchPostsError) {
-    toast({
-      title: 'Error',
-      description: 'Failed to fetch posts',
-      variant: 'destructive'
-    })
+  const [postCountQueryKeyAtom, setPostsQueryKeyAtom] = useAtom(postsQueryKeyAtom)
+  if (!postCountQueryKeyAtom) {
+    setPostsQueryKeyAtom(postsQueryKey)
   }
 
-  const [isNewPostAvailable, setNewPostAvailable] = useState(false)
-  useWatchContractEvent({
-    ...contractConfig,
-    eventName: 'PostCreated',
-    onLogs(logs) {
-      // console.log('PostCreated event', logs)
-      if (!postCount || !logs[0]?.args?.id) return
-      if (logs[0].args.id > postCount) {
-        setNewPostAvailable(true)
-      }
-    }
-  })
+  // useWatchContractEvent({
+  //   ...contractConfig,
+  //   eventName: 'PostCreated',
+  //   async onLogs(logs) {
+  //     console.log('PostCreated event', logs)
+  //     if (!postCount || !logs[0]?.args?.id) return
+  //     if (logs[0].args.id > postCount) {
+  //       setNewPostAvailable(true)
+  //       await queryClient.invalidateQueries({ queryKey: postCountQueryKey })
+  //       await queryClient.invalidateQueries({ queryKey: postsQueryKey })
+  //     }
+  //   }
+  // })
+
+  // useWatchContractEvent({
+  //   ...contractConfig,
+  //   eventName: 'PostDeleted',
+  //   async onLogs(logs) {
+  //     console.log('PostDeleted event', logs)
+  //     if (!postCount || !logs[0]?.args?.id) return
+
+  //     await queryClient.invalidateQueries({ queryKey: postCountQueryKey })
+  //     await queryClient.invalidateQueries({ queryKey: postsQueryKey })
+  //   }
+  // })
 
   // @ts-expect-error - Wagmi types are incorrect
   const posts = (postData?.pages.flat().flatMap((page) => page.result as Bulletin[]) ?? []) as Bulletin[]
-  console.log('Posts:', postData)
 
+  const hasMore = Boolean(postCount && posts.length < Number(postCount))
+
+  return {
+    hasMore,
+    postData,
+    fetchNextPosts,
+    postCount,
+    posts,
+    address,
+    fetchPostsError,
+    postsQueryKey,
+    postCountQueryKey
+  }
+}
+
+export function useCreatePost() {
   const { writeContract: createPostMutation, isPending: isCreatingPost } = useWriteContract()
-  const { writeContract: deletePostMutation, isPending: isDeletingPost } = useWriteContract()
+  const { toast } = useToast()
 
   const createPost = useCallback(
     (content: string) => {
+      const identifier = nanoid()
       createPostMutation(
         {
           ...contractConfig,
           functionName: 'createPost',
-          args: [content]
+          args: [identifier, content]
         },
         {
-          // onSuccess(data, variables) {
-          //   const optimisticPost = {
-          //     id: BigInt('0x' + window.crypto.randomUUID().replace(/-/g, '')),
-          //     content: variables.args[0] || '',
-          //     timestamp: BigInt(Date.now()),
-          //     author: data,
-          //     isDeleted: false
-          //   } satisfies Bulletin
-          // },
           onError() {
             toast({
               title: 'Error',
@@ -101,6 +122,13 @@ export function usePostStore() {
     },
     [createPostMutation, toast]
   )
+
+  return { createPost, isCreatingPost }
+}
+
+export function useDeletePost() {
+  const { writeContract: deletePostMutation, isPending: isDeletingPost } = useWriteContract()
+  const { toast } = useToast()
 
   const deletePost = useCallback(
     (id: bigint) => {
@@ -124,20 +152,5 @@ export function usePostStore() {
     [deletePostMutation, toast]
   )
 
-  const hasMore = postCount && posts.length < Number(postCount)
-
-  return {
-    createPost,
-    isCreatingPost,
-    deletePost,
-    isDeletingPost,
-    hasMore,
-    postData,
-    fetchNextPosts,
-    postCount,
-    posts,
-    refetchPosts,
-    isNewPostAvailable,
-    address
-  }
+  return { deletePost, isDeletingPost }
 }

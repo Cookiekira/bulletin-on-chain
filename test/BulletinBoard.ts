@@ -1,6 +1,7 @@
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox-viem/network-helpers.js'
 import { expect } from 'chai'
 import hre from 'hardhat'
+import { nanoid } from 'nanoid'
 
 describe('BulletinBoard', function () {
   async function deployBulletinBoardFixture() {
@@ -14,7 +15,7 @@ describe('BulletinBoard', function () {
     it('Should create a new post', async function () {
       const { bulletinBoard } = await loadFixture(deployBulletinBoardFixture)
 
-      await bulletinBoard.write.createPost(['Hello World'])
+      await bulletinBoard.write.createPost([nanoid(), 'Hello World'])
       const post = await bulletinBoard.read.getPost([1n])
       console.log('Post created:', post)
 
@@ -26,7 +27,7 @@ describe('BulletinBoard', function () {
     it('Should emit PostCreated event', async function () {
       const { bulletinBoard, publicClient } = await loadFixture(deployBulletinBoardFixture)
 
-      const hash = await bulletinBoard.write.createPost(['Hello World'])
+      const hash = await bulletinBoard.write.createPost([nanoid(), 'Hello World'])
       await publicClient.waitForTransactionReceipt({ hash })
 
       const events = await bulletinBoard.getEvents.PostCreated()
@@ -38,7 +39,7 @@ describe('BulletinBoard', function () {
     it('Should delete a post', async function () {
       const { bulletinBoard } = await loadFixture(deployBulletinBoardFixture)
 
-      await bulletinBoard.write.createPost(['Hello World'])
+      await bulletinBoard.write.createPost([nanoid(), 'Hello World'])
       await bulletinBoard.write.deletePost([1n])
 
       const post = await bulletinBoard.read.getPost([1n])
@@ -50,11 +51,11 @@ describe('BulletinBoard', function () {
         const { bulletinBoard } = await loadFixture(deployBulletinBoardFixture)
 
         // Create multiple posts
-        await bulletinBoard.write.createPost(['Post 1'])
-        await bulletinBoard.write.createPost(['Post 2'])
-        await bulletinBoard.write.createPost(['Post 3'])
-        await bulletinBoard.write.createPost(['Post 4'])
-        await bulletinBoard.write.createPost(['Post 5'])
+        await bulletinBoard.write.createPost([nanoid(), 'Post 1'])
+        await bulletinBoard.write.createPost([nanoid(), 'Post 2'])
+        await bulletinBoard.write.createPost([nanoid(), 'Post 3'])
+        await bulletinBoard.write.createPost([nanoid(), 'Post 4'])
+        await bulletinBoard.write.createPost([nanoid(), 'Post 5'])
 
         // Test first page
         const page1 = await bulletinBoard.read.getPostsByPage([1n, 2n])
@@ -77,7 +78,7 @@ describe('BulletinBoard', function () {
       it('Should handle invalid page parameters', async function () {
         const { bulletinBoard } = await loadFixture(deployBulletinBoardFixture)
 
-        await bulletinBoard.write.createPost(['Post 1'])
+        await bulletinBoard.write.createPost([nanoid(), 'Post 1'])
 
         await expect(bulletinBoard.read.getPostsByPage([0n, 1n])).to.be.rejectedWith('Page must be greater than 0')
 

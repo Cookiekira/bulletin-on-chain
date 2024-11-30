@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 contract BulletinBoard {
     struct Post {
         uint256 id;
+        // Used for client side validation
+        string identifier;
         address author;
         string content;
         uint256 timestamp;
@@ -11,16 +13,17 @@ contract BulletinBoard {
     }
 
     mapping(uint256 => Post) public posts;
+
     uint256 public postCount;
 
-    event PostCreated(uint256 indexed id, address indexed author, string content, uint256 timestamp);
+    event PostCreated(uint256 indexed id, string identifier, address indexed author, string content, uint256 timestamp);
     event PostDeleted(uint256 indexed id);
 
-    function createPost(string memory _content) public {
+    function createPost(string memory _identifier, string memory _content) public {
         postCount++;
-        posts[postCount] = Post(postCount, msg.sender, _content, block.timestamp, false);
+        posts[postCount] = Post(postCount, _identifier, msg.sender, _content, block.timestamp, false);
 
-        emit PostCreated(postCount, msg.sender, _content, block.timestamp);
+        emit PostCreated(postCount, _identifier, msg.sender, _content, block.timestamp);
     }
 
     function deletePost(uint256 _id) public {
@@ -45,7 +48,7 @@ contract BulletinBoard {
         // Calculate end index with overflow check
         uint256 offset = (_page - 1) * _pageSize;
         require(offset < postCount, 'Page out of range');
-        
+
         uint256 end = postCount - offset;
         uint256 start = end >= _pageSize ? end - _pageSize + 1 : 1;
 

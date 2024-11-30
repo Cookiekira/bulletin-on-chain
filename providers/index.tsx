@@ -3,9 +3,11 @@
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { hardhat, sepolia } from 'wagmi/chains'
+import type { ResolvedRegister } from 'wagmi'
 import { WagmiProvider } from 'wagmi'
 import '@rainbow-me/rainbowkit/styles.css'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Provider } from 'jotai'
 
 if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
   throw new Error('Missing NEXT_PUBLIC_PROJECT_ID')
@@ -28,8 +30,8 @@ const config = getDefaultConfig({
       }
     },
     ...(process.env.NODE_ENV === 'development' ? [hardhat] : [])
-  ],
-})
+  ]
+}) as ResolvedRegister['config']
 
 const queryClient = new QueryClient()
 
@@ -37,7 +39,9 @@ export function Web3Provider({ children }: { readonly children: React.ReactNode 
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>{children}</RainbowKitProvider>
+        <RainbowKitProvider>
+          <Provider>{children}</Provider>
+        </RainbowKitProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </WagmiProvider>

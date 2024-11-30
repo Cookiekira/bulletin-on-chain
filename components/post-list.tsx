@@ -1,15 +1,17 @@
 'use client'
 
-import React, { memo, useCallback, useState } from 'react'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Card, CardContent } from '@/components/ui/card'
+import { contractConfig, type Bulletin } from '@/app/types'
 import { Button } from '@/components/ui/button'
-import { RefreshCw } from 'lucide-react'
-import { type Bulletin } from '@/app/types'
-import { useAccount } from 'wagmi'
-import { usePostStore } from '@/store/use-post-store'
+import { Card, CardContent } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
+import { useDeletePost, usePostStore, postsQueryKeyAtom } from '@/store/use-post-store'
 import { formatDistanceToNow } from 'date-fns'
+import { memo, useCallback, useState } from 'react'
+import { useAccount, useWatchContractEvent } from 'wagmi'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAtom } from 'jotai'
 
 /**
  * Renders a scrollable list of posts with infinite loading functionality.
@@ -21,7 +23,7 @@ import { formatDistanceToNow } from 'date-fns'
  * Deleted posts show a placeholder message instead of content.
  */
 export function PostList() {
-  const { hasMore, fetchNextPosts, isNewPostAvailable, posts, address, postCount } = usePostStore()
+  const { hasMore, fetchNextPosts, posts } = usePostStore()
 
   const createObserver = useCallback(
     (node: HTMLDivElement) => {
@@ -48,28 +50,30 @@ export function PostList() {
     [fetchNextPosts, hasMore]
   )
 
-  if(postCount === BigInt(0)) {
-    return (
-      <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
-        <div className="flex justify-center">
-          <p className="text-gray-500">No posts yet</p>
-        </div>
-      </ScrollArea>
-    )
-  }
+  // if (postCount === BigInt(0) && pendingPosts.length === 0) {
+  //   return (
+  //     <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
+  //       <div className="flex justify-center">
+  //         <p className="text-gray-500">No posts yet</p>
+  //       </div>
+  //     </ScrollArea>
+  //   )
+  // }
 
   return (
     <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
-      {isNewPostAvailable && (
+      {/* {isNewPostAvailable && (
         <div className="sticky top-0 z-10 mb-4 flex justify-center">
           <Button variant="outline" size="sm" className="gap-2 bg-background">
             <RefreshCw className="size-4" />
             New posts available
           </Button>
         </div>
-      )}
+      )} */}
 
-      {/* <PendingPost content="This is a pending post" /> */}
+      {/* {pendingPosts.map((post) => (
+        <PendingPost key={post.identifier} content={post.content} />
+      ))} */}
 
       {posts.map((post) => (
         <Post key={post.id.toString()} post={post} />
@@ -91,8 +95,11 @@ const Post = memo(
     post: Bulletin
   }>) => {
     const { address } = useAccount()
-    const { deletePost } = usePostStore()
     const [copied, setCopied] = useState(false)
+    const { deletePost, isDeletingPost } = useDeletePost()
+    const [isDeletePending, setIsDeletePending] = useState(false)
+    const queryClient = useQueryClient()
+    const [postsQueryKey] = useAtom(postsQueryKeyAtom)
 
     const handleCopyAddress = useCallback(() => {
       void navigator.clipboard.writeText(post.author)
@@ -102,8 +109,24 @@ const Post = memo(
       }, 2000)
     }, [post.author])
 
+    const handleDeletePost = useCallback(() => {
+      deletePost(post.id)
+      setIsDeletePending(true)
+    }, [deletePost, post.id])
+
+    useWatchContractEvent({
+      ...contractConfig,
+      eventName: 'PostDeleted',
+      async onLogs(logs) {
+        if (logs[0]?.args?.id === post.id) {
+          if (isDeletePending) await queryClient.invalidateQueries({ queryKey: postsQueryKey })
+          setIsDeletePending(false)
+        }
+      }
+    })
+
     return (
-      <Card key={post.id.toString()} className="mb-4">
+      <Card key={post.id.toString()} className={cn('mb-4', { 'animate-pulse': isDeletePending })}>
         <CardContent className="pt-6">
           <div className="flex items-start justify-between">
             <div>
@@ -128,12 +151,12 @@ const Post = memo(
                   {formatDistanceToNow(new Date(Number(post.timestamp) * 1000), { addSuffix: true })}
                 </span>
               </div>
-              <p className={post.isDeleted ? 'italic text-gray-400' : ''}>
-                {post.isDeleted ? 'This post has been deleted' : post.content}
+              <p className={post.isDeleted || isDeletePending ? 'italic text-gray-400' : ''}>
+                {isDeletePending ? 'Deleting post...' : post.isDeleted ? 'This post has been deleted' : post.content}
               </p>
             </div>
             {address === post.author && !post.isDeleted && (
-              <Button variant="outline" size="sm" onClick={deletePost.bind(null, post.id)}>
+              <Button variant="outline" size="sm" onClick={handleDeletePost} disabled={isDeletingPost}>
                 Delete
               </Button>
             )}

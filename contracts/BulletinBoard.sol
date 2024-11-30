@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -42,5 +41,27 @@ contract BulletinBoard {
     function getPost(uint256 _id) public view returns (Post memory) {
         require(_id > 0 && _id <= postCount, "Post does not exist");
         return posts[_id];
+    }
+
+    function getPostsByPage(uint256 _page, uint256 _pageSize) public view returns (Post[] memory) {
+        require(_page > 0, "Page must be greater than 0");
+        require(_pageSize > 0, "Page size must be greater than 0");
+
+        uint256 start = (_page - 1) * _pageSize + 1;
+        uint256 end = start + _pageSize - 1;
+        if (end > postCount) {
+            end = postCount;
+        }
+        require(start <= end, "Page out of range");
+
+        Post[] memory result = new Post[](_pageSize);
+        uint256 resultIndex = 0;
+
+        for (uint256 i = start; i <= end; i++) {
+            result[resultIndex] = posts[i];
+            resultIndex++;
+        }
+
+        return result;
     }
 }

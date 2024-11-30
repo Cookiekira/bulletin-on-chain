@@ -1,4 +1,3 @@
-
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox-viem/network-helpers.js'
 import { expect } from 'chai'
 import hre from 'hardhat'
@@ -44,6 +43,52 @@ describe('BulletinBoard', function () {
       
       const post = await bulletinBoard.read.getPost([1n])
       expect(post.isDeleted).to.equal(true) // isDeleted
+    })
+
+    describe('Pagination', function () {
+      it('Should get posts by page', async function () {
+        const { bulletinBoard } = await loadFixture(deployBulletinBoardFixture)
+        
+        // Create multiple posts
+        await bulletinBoard.write.createPost(['Post 1'])
+        await bulletinBoard.write.createPost(['Post 2'])
+        await bulletinBoard.write.createPost(['Post 3'])
+        await bulletinBoard.write.createPost(['Post 4'])
+        await bulletinBoard.write.createPost(['Post 5'])
+
+        // Test first page
+        const page1 = await bulletinBoard.read.getPostsByPage([1n, 2n])
+        expect(page1).to.have.lengthOf(2)
+        expect(page1[0].content).to.equal('Post 1')
+        expect(page1[1].content).to.equal('Post 2')
+
+        // Test second page
+        const page2 = await bulletinBoard.read.getPostsByPage([2n, 2n])
+        expect(page2).to.have.lengthOf(2)
+        expect(page2[0].content).to.equal('Post 3')
+        expect(page2[1].content).to.equal('Post 4')
+
+        // Test last page with fewer items
+        const page3 = await bulletinBoard.read.getPostsByPage([3n, 2n])
+        expect(page3).to.have.lengthOf(1)
+        expect(page3[0].content).to.equal('Post 5')
+      })
+
+      it('Should handle invalid page parameters', async function () {
+        const { bulletinBoard } = await loadFixture(deployBulletinBoardFixture)
+
+        await expect(
+          bulletinBoard.read.getPostsByPage([0n, 1n])
+        ).to.be.rejectedWith('Page must be greater than 0')
+
+        await expect(
+          bulletinBoard.read.getPostsByPage([1n, 0n])
+        ).to.be.rejectedWith('Page size must be greater than 0')
+
+        await expect(
+          bulletinBoard.read.getPostsByPage([2n, 1n])
+        ).to.be.rejectedWith('Page out of range')
+      })
     })
   })
 })

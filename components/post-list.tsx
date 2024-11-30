@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { useDeletePost, usePostStore, useInvalidatePosts, pendingNewPostsAtom } from '@/store/use-post-store'
 import { formatDistanceToNow } from 'date-fns'
 import { useAtom } from 'jotai'
-import { memo, useCallback, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { memo, useCallback, useState, useRef } from 'react'
 import { useAccount, useWatchContractEvent } from 'wagmi'
 
 /**
@@ -22,10 +24,12 @@ import { useAccount, useWatchContractEvent } from 'wagmi'
  * Deleted posts show a placeholder message instead of content.
  */
 export function PostList() {
-  const { hasMore, fetchNextPosts, posts, postCount } = usePostStore()
+  const { hasMore, fetchNextPosts, posts, postCount, address } = usePostStore()
   const [pendingNewPosts, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
   const [isNewPostAvailable, setNewPostAvailable] = useState(false)
   const invalidatePosts = useInvalidatePosts()
+  const { toast } = useToast()
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   const createObserver = useCallback(
     (node: HTMLDivElement) => {
@@ -56,14 +60,28 @@ export function PostList() {
     ...contractConfig,
     eventName: 'PostCreated',
     async onLogs(logs) {
-      // console.log('New post created', logs)
       // * Check if the new post has already been fetched
       if (logs.every((log) => posts.some((post) => post.id === log.args.id))) return
       await invalidatePosts()
       // * Filter out pending posts that have been created
       setPendingNewPosts((prev) => prev.filter((post) => !logs.some((log) => log.args.identifier === post.identifier)))
+
+      if (logs.some((log) => log.args.author === address)) {
+        toast({
+          title: 'Post created',
+          description: 'Your post has been successfully created'
+        })
+      } else {
+        // * Notify user of new posts from other authors
+        setNewPostAvailable(true)
+      }
     }
   })
+
+  const handleNewPostsClick = useCallback(() => {
+    scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    setNewPostAvailable(false)
+  }, [])
 
   if (postCount === BigInt(0) && pendingNewPosts.length === 0) {
     return (
@@ -76,15 +94,15 @@ export function PostList() {
   }
 
   return (
-    <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
-      {/* {isNewPostAvailable && (
+    <ScrollArea ref={scrollAreaRef} className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
+      {isNewPostAvailable && (
         <div className="sticky top-0 z-10 mb-4 flex justify-center">
-          <Button variant="outline" size="sm" className="gap-2 bg-background">
+          <Button variant="outline" size="sm" className="gap-2 bg-background" onClick={handleNewPostsClick}>
             <RefreshCw className="size-4" />
             New posts available
           </Button>
         </div>
-      )} */}
+      )}
 
       {pendingNewPosts.map((post) => (
         <PendingPost key={post.identifier} content={post.content} />

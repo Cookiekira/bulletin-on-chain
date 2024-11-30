@@ -3,14 +3,11 @@ import { contractConfig } from '@/app/types'
 import { useToast } from '@/hooks/use-toast'
 import { useCallback, useState } from 'react'
 import { useAccount, useInfiniteReadContracts, useReadContract, useWatchContractEvent, useWriteContract } from 'wagmi'
-import type { ContractFunctionParameters } from 'viem'
 
 export function usePostStore() {
   const POSTS_PER_PAGE = 10
 
   const { toast } = useToast()
-
-  const [hasMore, setHasMore] = useState(true)
   const { address } = useAccount()
 
   const { data: postCount } = useReadContract({
@@ -26,28 +23,17 @@ export function usePostStore() {
   } = useInfiniteReadContracts({
     cacheKey: 'posts',
     contracts(pageParam) {
-      if (!postCount) return [] satisfies ContractFunctionParameters[]
-      const start = postCount - BigInt(pageParam * POSTS_PER_PAGE)
-
-      const posts = Array.from({ length: POSTS_PER_PAGE }, (_, index) => start - BigInt(index))
-        .filter((postId) => postId > 0n)
-        .map(
-          (postId) =>
-            ({
-              ...contractConfig,
-              functionName: 'getPost',
-              args: [postId]
-            }) satisfies ContractFunctionParameters
-        )
-
-      // Hasmore is set to false when the last page is reached
-      setHasMore(start > POSTS_PER_PAGE)
-
-      return posts
+      return [
+        {
+          ...contractConfig,
+          functionName: 'getPostsByPage',
+          args: [BigInt(pageParam), BigInt(POSTS_PER_PAGE)]
+        }
+      ]
     },
     query: {
       enabled: Boolean(postCount),
-      initialPageParam: 0,
+      initialPageParam: 1,
       getNextPageParam: (_lastPage, _allPages, lastPageParam) => {
         if (postCount && (lastPageParam + 1) * POSTS_PER_PAGE >= postCount) {
           return null
@@ -79,7 +65,8 @@ export function usePostStore() {
   })
 
   // @ts-expect-error - Wagmi types are incorrect
-  const posts = (postData?.pages.flat().map((page) => page.result as Bulletin) ?? []) as Bulletin[]
+  const posts = (postData?.pages.flat().flatMap((page) => page.result as Bulletin[]) ?? []) as Bulletin[]
+  console.log('Posts:', postData)
 
   const { writeContract: createPostMutation, isPending: isCreatingPost } = useWriteContract()
   const { writeContract: deletePostMutation, isPending: isDeletingPost } = useWriteContract()
@@ -137,13 +124,14 @@ export function usePostStore() {
     [deletePostMutation, toast]
   )
 
+  const hasMore = postCount && posts.length < Number(postCount)
+
   return {
     createPost,
     isCreatingPost,
     deletePost,
     isDeletingPost,
     hasMore,
-    setHasMore,
     postData,
     fetchNextPosts,
     postCount,

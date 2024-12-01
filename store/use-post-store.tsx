@@ -2,7 +2,7 @@ import type { Bulletin } from '@/app/types'
 import { contractConfig } from '@/app/types'
 import { useToast } from '@/hooks/use-toast'
 import { nanoid } from 'nanoid'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useAccount, useInfiniteReadContracts, useReadContract, useWriteContract } from 'wagmi'
 import { atom, useAtom } from 'jotai'
 import { useQueryClient, type QueryKey } from '@tanstack/react-query'
@@ -18,10 +18,15 @@ export const pendingNewPostsAtom = atom<
 
 export function usePostStore() {
   const POSTS_PER_PAGE = 10
+  const { toast } = useToast()
 
   const { address } = useAccount()
 
-  const { data: postCount, queryKey: postCountQueryKey } = useReadContract({
+  const {
+    data: postCount,
+    queryKey: postCountQueryKey,
+    error: fetchCountError
+  } = useReadContract({
     ...contractConfig,
     functionName: 'postCount'
   })
@@ -68,6 +73,24 @@ export function usePostStore() {
 
   const hasMore = Boolean(postCount && posts.length < Number(postCount))
 
+  useEffect(() => {
+    if (fetchPostsError) {
+      toast({
+        title: fetchPostsError.name,
+        description: fetchPostsError.message,
+        variant: 'destructive',
+      })
+    }
+
+    if (fetchCountError) {
+      toast({
+        title: fetchCountError.name,
+        description: fetchCountError.cause.message,
+        variant: 'destructive',
+      })
+    }
+  }, [fetchCountError, fetchPostsError, toast])
+
   return {
     hasMore,
     postData,
@@ -76,6 +99,7 @@ export function usePostStore() {
     posts,
     address,
     fetchPostsError,
+    fetchCountError,
     postsQueryKey,
     postCountQueryKey
   }

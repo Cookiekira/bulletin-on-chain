@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { useDeletePost, usePostStore, useInvalidatePosts, pendingNewPostsAtom } from '@/store/use-post-store'
 import { formatDistanceToNow } from 'date-fns'
 import { useAtom } from 'jotai'
-import { RefreshCw } from 'lucide-react'
+import { ArrowUp } from 'lucide-react'
 import { memo, useCallback, useState, useRef } from 'react'
 import { useAccount, useWatchContractEvent } from 'wagmi'
 
@@ -24,11 +24,12 @@ import { useAccount, useWatchContractEvent } from 'wagmi'
  * Deleted posts show a placeholder message instead of content.
  */
 export function PostList() {
-  const { hasMore, fetchNextPosts, posts, postCount, address } = usePostStore()
+  const { hasMore, fetchNextPosts, posts, postCount, address, fetchCountError } = usePostStore()
   const [pendingNewPosts, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
   const [isNewPostAvailable, setNewPostAvailable] = useState(false)
   const invalidatePosts = useInvalidatePosts()
   const { toast } = useToast()
+  const scrollAnchorRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   const createObserver = useCallback(
@@ -73,13 +74,14 @@ export function PostList() {
         })
       } else {
         // * Notify user of new posts from other authors
-        setNewPostAvailable(true)
+        const scrollTop = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')?.scrollTop ?? 0
+        if (scrollTop > 0) setNewPostAvailable(true)
       }
     }
   })
 
   const handleNewPostsClick = useCallback(() => {
-    scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollAnchorRef.current?.scrollIntoView({ behavior: 'smooth' })
     setNewPostAvailable(false)
   }, [])
 
@@ -95,10 +97,18 @@ export function PostList() {
 
   return (
     <ScrollArea ref={scrollAreaRef} className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
+      <div ref={scrollAnchorRef}>{/* An anchor to scroll to when new posts are available */}</div>
+
+      {fetchCountError && (
+        <div className="flex justify-center">
+          <p className="text-destructive">Read Contract Failed</p>
+        </div>
+      )}
+
       {isNewPostAvailable && (
         <div className="sticky top-0 z-10 mb-4 flex justify-center">
           <Button variant="outline" size="sm" className="gap-2 bg-background" onClick={handleNewPostsClick}>
-            <RefreshCw className="size-4" />
+            <ArrowUp className="size-4" />
             New posts available
           </Button>
         </div>
@@ -150,7 +160,6 @@ const Post = memo(
       ...contractConfig,
       eventName: 'PostDeleted',
       async onLogs(logs) {
-        console.log('Post deleted', logs[0].args)
         if (logs[0]?.args?.id === post.id) {
           if (isDeletePending) {
             await invalidatePosts()

@@ -8,6 +8,7 @@ import { WagmiProvider } from 'wagmi'
 import '@rainbow-me/rainbowkit/styles.css'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Provider } from 'jotai'
+import { ThemeProvider } from 'next-themes'
 
 if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
   throw new Error('Missing NEXT_PUBLIC_PROJECT_ID')
@@ -43,9 +44,11 @@ export function Web3Provider({ children }: { readonly children: React.ReactNode 
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <Provider>{children}</Provider>
-        </RainbowKitProvider>
+        <ThemeProvider>
+          <RainbowKitProvider>
+            <Provider>{children}</Provider>
+          </RainbowKitProvider>
+        </ThemeProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </WagmiProvider>

@@ -13,25 +13,29 @@ if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
   throw new Error('Missing NEXT_PUBLIC_PROJECT_ID')
 }
 
-if (!process.env.NEXT_PUBLIC_RPC_URL) {
-  throw new Error('Missing NEXT_PUBLIC_RPC_URL')
+const chains: ResolvedRegister['config']['chains'] = [
+  {
+    ...sepolia,
+    rpcUrls: {
+      default: {
+        http: process.env.NEXT_PUBLIC_RPC_URL
+          ? [process.env.NEXT_PUBLIC_RPC_URL, ...sepolia.rpcUrls.default.http]
+          : sepolia.rpcUrls.default.http
+      }
+    }
+  }
+]
+
+if (process.env.NODE_ENV === 'development') {
+  // @ts-expect-error - For development purposes only
+  chains.push(hardhat)
 }
 
 const config = getDefaultConfig({
   appName: 'Bulletin Board',
   projectId: process.env.NEXT_PUBLIC_PROJECT_ID, // Get one from https://cloud.walletconnect.com
-  chains: [
-    {
-      ...sepolia,
-      rpcUrls: {
-        default: {
-          http: [process.env.NEXT_PUBLIC_RPC_URL, sepolia.rpcUrls.default.http[0]]
-        }
-      }
-    },
-    ...(process.env.NODE_ENV === 'development' ? [hardhat] : [])
-  ]
-}) as ResolvedRegister['config']
+  chains: chains
+})
 
 const queryClient = new QueryClient()
 

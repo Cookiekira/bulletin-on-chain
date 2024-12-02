@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Web3Provider } from '@/providers'
 import { Toaster } from '@/components/ui/toaster'
+import { Provider } from '@/providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -14,10 +14,10 @@ export default function RootLayout({ children }: { readonly children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
-        <Web3Provider>
+        <Provider>
           {children}
           <Toaster />
-        </Web3Provider>
+        </Provider>
       </body>
     </html>
   )

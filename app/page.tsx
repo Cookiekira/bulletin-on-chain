@@ -4,14 +4,16 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 import { PostList } from '@/components/post-list'
 import { PostCreate } from '@/components/post-create'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 
 export default function Home() {
   return (
     <main className="container mx-auto p-4">
-      <div className="fixed right-4 top-4">
+      <div className="fixed right-4 top-4 flex items-center justify-end gap-5">
+        <ThemeSwitcher />
         <ConnectButton />
       </div>
-      <Card className="mx-auto max-w-2xl">
+      <Card className="mx-auto mt-12 max-w-2xl">
         <CardHeader>
           <CardTitle>Bulletin Board</CardTitle>
         </CardHeader>

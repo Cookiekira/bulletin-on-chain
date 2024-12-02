@@ -1,14 +1,15 @@
 'use client'
 
-import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { darkTheme, getDefaultConfig, lightTheme, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { hardhat, sepolia } from 'wagmi/chains'
 import type { ResolvedRegister } from 'wagmi'
 import { WagmiProvider } from 'wagmi'
 import '@rainbow-me/rainbowkit/styles.css'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { Provider } from 'jotai'
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider, useTheme } from 'next-themes'
+import { Provider as JotaiProvider } from 'jotai'
+import { useIsClient } from 'foxact/use-is-client'
 
 if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
   throw new Error('Missing NEXT_PUBLIC_PROJECT_ID')
@@ -41,16 +42,26 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient()
 
 export function Web3Provider({ children }: { readonly children: React.ReactNode }) {
+  const { theme } = useTheme()
+  const isClient = useIsClient()
+  // Fix hydration mismatch
+  const renderTheme = isClient ? (theme === 'light' ? lightTheme() : darkTheme()) : undefined
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <RainbowKitProvider>
-            <Provider>{children}</Provider>
-          </RainbowKitProvider>
-        </ThemeProvider>
+        <RainbowKitProvider theme={renderTheme}>
+          <JotaiProvider>{children}</JotaiProvider>
+        </RainbowKitProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </WagmiProvider>
+  )
+}
+
+export function Provider({ children }: { readonly children: React.ReactNode }) {
+  return (
+    <ThemeProvider attribute="class">
+      <Web3Provider>{children}</Web3Provider>
+    </ThemeProvider>
   )
 }

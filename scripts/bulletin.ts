@@ -17,7 +17,7 @@ async function main() {
   })
 
   await publicClient.waitForTransactionReceipt({ hash: createPostHash })
-  
+
   console.log('Post created')
 
   // Toggle the post visibility

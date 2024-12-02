@@ -1,9 +1,9 @@
-import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+import { buildModule } from '@nomicfoundation/hardhat-ignition/modules'
 
-const TodoListModule = buildModule("TodoListModule", (m) => {
-  const todoList = m.contract("TodoList");
+const TodoListModule = buildModule('TodoListModule', (m) => {
+  const todoList = m.contract('TodoList')
 
-  return { todoList };
-});
+  return { todoList }
+})
 
-export default TodoListModule;
+export default TodoListModule

@@ -1,5 +1,5 @@
-import { vars, type HardhatUserConfig } from "hardhat/config.js";
-import "@nomicfoundation/hardhat-toolbox-viem";
+import { vars, type HardhatUserConfig } from 'hardhat/config.js'
+import '@nomicfoundation/hardhat-toolbox-viem'
 
 const SEPOLIA_PRIVATE_KEY = vars.get('SEPOLIA_PRIVATE_KEY')
 const INFURA_API_KEY = vars.get('INFURA_API_KEY')
@@ -20,4 +20,4 @@ const config: HardhatUserConfig = {
   }
 }
 
-export default config;
+export default config

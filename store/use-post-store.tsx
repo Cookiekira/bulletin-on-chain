@@ -78,7 +78,7 @@ export function usePostStore() {
       toast({
         title: fetchPostsError.name,
         description: fetchPostsError.message,
-        variant: 'destructive',
+        variant: 'destructive'
       })
     }
 
@@ -86,7 +86,7 @@ export function usePostStore() {
       toast({
         title: fetchCountError.name,
         description: fetchCountError.cause.message,
-        variant: 'destructive',
+        variant: 'destructive'
       })
     }
   }, [fetchCountError, fetchPostsError, toast])

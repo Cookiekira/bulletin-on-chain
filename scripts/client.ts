@@ -20,7 +20,7 @@ async function main() {
 
 main()
   .then(() => process.exit())
-  .catch((error:unknown) => {
+  .catch((error: unknown) => {
     console.error(error)
     process.exit(1)
   })

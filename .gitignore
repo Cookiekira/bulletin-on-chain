@@ -74,3 +74,4 @@ node_modules
 
 # Hardhat Ignition default folder for deployments
 ignition/deployments/
+.aider*

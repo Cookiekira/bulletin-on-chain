@@ -87,7 +87,7 @@ export function PostList() {
 
   if (postCount === BigInt(0) && pendingNewPosts.length === 0) {
     return (
-      <ScrollArea className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
+      <ScrollArea className="mx-auto mt-8 max-h-[calc(100vh-260px)] max-w-2xl rounded-md border p-4">
         <div className="flex justify-center">
           <p className="text-gray-500">No posts yet</p>
         </div>
@@ -96,7 +96,7 @@ export function PostList() {
   }
 
   return (
-    <ScrollArea ref={scrollAreaRef} className="mx-auto mt-8 h-[calc(100vh-240px)] max-w-2xl rounded-md border p-4">
+    <ScrollArea ref={scrollAreaRef} className="mx-auto mt-8 size-full max-w-2xl rounded-md border p-4">
       <div ref={scrollAnchorRef}>{/* An anchor to scroll to when new posts are available */}</div>
 
       {fetchCountError && (

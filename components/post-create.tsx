@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { pendingNewPostsAtom, useCreatePost } from '@/store/use-post-store'
 import { useAtom } from 'jotai'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 
 export function PostCreate() {
   const [content, setContent] = useState('')
@@ -24,18 +25,26 @@ export function PostCreate() {
   }
 
   return (
-    <form onSubmit={handleCreatePost} className="flex gap-4">
-      <Input
-        required
-        placeholder="What's on your mind?"
-        value={content}
-        onChange={(e) => {
-          setContent(e.target.value)
-        }}
-      />
-      <Button type="submit" disabled={isCreatingPost}>
-        Post
-      </Button>
-    </form>
+    <Card className="mx-auto mt-12 w-full max-w-2xl">
+      <CardHeader>
+        <CardTitle>Bulletin Board</CardTitle>
+        <CardDescription>Posts on chain cannot be deleted truly. Be careful what you post!</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleCreatePost} className="flex gap-4">
+          <Input
+            required
+            placeholder="What's on your mind?"
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value)
+            }}
+          />
+          <Button type="submit" disabled={isCreatingPost}>
+            Post
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   )
 }

@@ -11,7 +11,7 @@ export function PostCreate() {
   const { createPost, isCreatingPost } = useCreatePost()
   const [, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
 
-  const handleCreatePost = async (e:React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
     const { identifier, mutation } = createPost(content)
     setPendingNewPosts((prev) => [{ identifier, content }, ...prev])

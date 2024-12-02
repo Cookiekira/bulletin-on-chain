@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 // Inspired by react-hot-toast library
@@ -124,7 +125,7 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
-const listeners: Array<(state: State) => void> = []
+const listeners: ((state: State) => void)[] = []
 
 let memoryState: State = { toasts: [] }
 
@@ -141,11 +142,11 @@ function toast({ ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
-    dispatch({
+    { dispatch({
       type: 'UPDATE_TOAST',
       toast: { ...props, id }
-    })
-  const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id })
+    }); }
+  const dismiss = () => { dispatch({ type: 'DISMISS_TOAST', toastId: id }); }
 
   dispatch({
     type: 'ADD_TOAST',
@@ -182,7 +183,7 @@ function useToast() {
   return {
     ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: 'DISMISS_TOAST', toastId })
+    dismiss: (toastId?: string) => { dispatch({ type: 'DISMISS_TOAST', toastId }); }
   }
 }
 

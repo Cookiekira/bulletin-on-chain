@@ -180,6 +180,9 @@ importers:
       hardhat:
         specifier: ^2.22.16
         version: 2.22.16(bufferutil@4.0.8)(ts-node@10.9.2(@types/node@20.17.9)(typescript@5.7.2))(typescript@5.7.2)(utf-8-validate@5.0.10)
+      mocha:
+        specifier: ^10.8.2
+        version: 10.8.2
       network-helpers:
         specifier: link:@nomicfoundation/hardhat-toolbox-viem/network-helpers
         version: link:@nomicfoundation/hardhat-toolbox-viem/network-helpers

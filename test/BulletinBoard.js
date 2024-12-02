@@ -2,6 +2,7 @@ import { loadFixture } from '@nomicfoundation/hardhat-toolbox-viem/network-helpe
 import { expect } from 'chai'
 import hre from 'hardhat'
 import { nanoid } from 'nanoid'
+import { describe, it } from 'mocha'
 
 describe('BulletinBoard', function () {
   async function deployBulletinBoardFixture() {
@@ -32,8 +33,8 @@ describe('BulletinBoard', function () {
 
       const events = await bulletinBoard.getEvents.PostCreated()
       expect(events).to.have.lengthOf(1)
-      expect((events[0].args as { id: bigint; content: string }).id).to.equal(1n)
-      expect((events[0].args as { id: bigint; content: string }).content).to.equal('Hello World')
+      expect(events[0].args.id).to.equal(1n)
+      expect(events[0].args.content).to.equal('Hello World')
     })
 
     it('Should delete a post', async function () {

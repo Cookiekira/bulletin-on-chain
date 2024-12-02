@@ -1,11 +1,12 @@
 import Bulletin from '../artifacts/contracts/BulletinBoard.sol/BulletinBoard.json'
 import hre from 'hardhat'
-import deployedAddress from '../ignition/deployments/chain-11155111/deployed_addresses.json'
 
 async function main() {
   // Create wallet client and public client
   const [bobWalletClient] = await hre.viem.getWalletClients()
   const publicClient = await hre.viem.getPublicClient()
+  const addressFilePath = '../ignition/deployments/chain-11155111/deployed_addresses.json'
+  const deployedAddress = await import(addressFilePath)
   const bulletinAddress = deployedAddress['BulletinBoardModule#BulletinBoard'] as `0x${string}`
 
   // Create a new post - Pass content as a single string

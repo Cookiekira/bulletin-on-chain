@@ -12,24 +12,23 @@ export type Bulletin = {
 const isDevelopment = process.env.NODE_ENV === 'development'
 
 const getAddress = async () => {
-  if (isDevelopment) {
-    try {
-      const address = await import('@/ignition/deployments/chain-31337/deployed_addresses.json')
-      return address['BulletinBoardModule#BulletinBoard']
-    } catch (e) {
-      console.error(e)
-      throw new Error('Missing BULLETIN_ADDRESS in .env')
-    }
-  }
-
-  if (!process.env.NEXT_PUBLIC_BULLETIN_ADDRESS) {
+  try {
+    const address = await import('@/ignition/deployments/chain-31337/deployed_addresses.json')
+    return address['BulletinBoardModule#BulletinBoard']
+  } catch (e) {
+    console.error(e)
     throw new Error('Missing BULLETIN_ADDRESS in .env')
   }
-  return process.env.NEXT_PUBLIC_BULLETIN_ADDRESS
+}
+
+const address = isDevelopment ? await getAddress() : process.env.NEXT_PUBLIC_BULLETIN_ADDRESS
+
+if (!address) {
+  throw new Error('Missing BULLETIN_ADDRESS in .env')
 }
 
 export const contractConfig = {
-  address: (await getAddress()) as `0x${string}`,
+  address: address as `0x${string}`,
   abi: BulletinABI.abi as BulletinBoard$Type['abi']
 } as const
 

@@ -16,7 +16,7 @@ const compat = new FlatCompat({
 
 const config = tseslint.config(
   {
-    ignores: ['.next', 'node_modules', 'components/ui','artifacts'],
+    ignores: ['.next', 'node_modules', 'components/ui', 'artifacts']
   },
   // Base
   js.configs.recommended,

@@ -11,7 +11,8 @@ export function PostCreate() {
   const { createPost, isCreatingPost } = useCreatePost()
   const [, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
 
-  const handleCreatePost = async () => {
+  const handleCreatePost = async (e:React.FormEvent) => {
+    e.preventDefault()
     const { identifier, mutation } = createPost(content)
     setPendingNewPosts((prev) => [{ identifier, content }, ...prev])
     try {
@@ -23,17 +24,18 @@ export function PostCreate() {
   }
 
   return (
-    <div className="flex gap-4">
+    <form onSubmit={handleCreatePost} className="flex gap-4">
       <Input
+        required
         placeholder="What's on your mind?"
         value={content}
         onChange={(e) => {
           setContent(e.target.value)
         }}
       />
-      <Button onClick={handleCreatePost} disabled={isCreatingPost}>
+      <Button type="submit" disabled={isCreatingPost}>
         Post
       </Button>
-    </div>
+    </form>
   )
 }

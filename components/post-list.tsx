@@ -151,9 +151,13 @@ const Post = memo(
       }, 2000)
     }, [post.author])
 
-    const handleDeletePost = useCallback(() => {
-      deletePost(post.id)
-      setIsDeletePending(true)
+    const handleDeletePost = useCallback(async () => {
+      try {
+        setIsDeletePending(true)
+        await deletePost(post.id)
+      } catch {
+        setIsDeletePending(false)
+      }
     }, [deletePost, post.id])
 
     useWatchContractEvent({

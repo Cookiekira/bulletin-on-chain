@@ -139,12 +139,12 @@ export function useCreatePost() {
 }
 
 export function useDeletePost() {
-  const { writeContract: deletePostMutation, isPending: isDeletingPost } = useWriteContract()
+  const { writeContractAsync: deletePostMutation, isPending: isDeletingPost } = useWriteContract()
   const { toast } = useToast()
 
   const deletePost = useCallback(
     (id: bigint) => {
-      deletePostMutation(
+      const mutation = deletePostMutation(
         {
           ...contractConfig,
           functionName: 'deletePost',
@@ -161,6 +161,8 @@ export function useDeletePost() {
           }
         }
       )
+
+      return mutation
     },
     [deletePostMutation, toast]
   )

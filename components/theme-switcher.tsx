@@ -30,10 +30,9 @@ const themes = [
 ]
 
 export function ThemeSwitcher() {
-  const { setTheme, theme, resolvedTheme } = useTheme()
+  const { setTheme, theme } = useTheme()
 
   const currentTheme = themes.find((t) => t.value === theme) ?? themes[0]
-  const isDark = resolvedTheme === 'dark'
   const isClient = useIsClient()
 
   const cycleTheme = useCallback(

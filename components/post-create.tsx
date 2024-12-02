@@ -11,10 +11,15 @@ export function PostCreate() {
   const { createPost, isCreatingPost } = useCreatePost()
   const [, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
 
-  const handleCreatePost = () => {
-    const identifier = createPost(content)
+  const handleCreatePost = async () => {
+    const { identifier, mutation } = createPost(content)
     setPendingNewPosts((prev) => [{ identifier, content }, ...prev])
-    setContent('')
+    try {
+      await mutation
+      setContent('')
+    } catch {
+      setPendingNewPosts((prev) => prev.filter((post) => post.identifier !== identifier))
+    }
   }
 
   return (

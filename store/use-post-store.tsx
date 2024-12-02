@@ -75,9 +75,10 @@ export function usePostStore() {
 
   useEffect(() => {
     if (fetchPostsError) {
+      const message = 'shortMessage' in fetchPostsError ? fetchPostsError.shortMessage : fetchPostsError.message
       toast({
         title: fetchPostsError.name,
-        description: fetchPostsError.message,
+        description: message,
         variant: 'destructive'
       })
     }
@@ -85,7 +86,7 @@ export function usePostStore() {
     if (fetchCountError) {
       toast({
         title: fetchCountError.name,
-        description: fetchCountError.cause.message,
+        description: fetchCountError.shortMessage,
         variant: 'destructive'
       })
     }
@@ -106,29 +107,30 @@ export function usePostStore() {
 }
 
 export function useCreatePost() {
-  const { writeContract: createPostMutation, isPending: isCreatingPost } = useWriteContract()
+  const { writeContractAsync: createPostMutation, isPending: isCreatingPost } = useWriteContract()
   const { toast } = useToast()
 
   const createPost = useCallback(
     (content: string) => {
       const identifier = nanoid()
-      createPostMutation(
+      const mutation = createPostMutation(
         {
           ...contractConfig,
           functionName: 'createPost',
           args: [identifier, content]
         },
         {
-          onError() {
+          onError(error) {
+            const message = 'shortMessage' in error ? error.shortMessage : error.message
             toast({
-              title: 'Error',
-              description: 'Failed to create post',
+              title: error.name,
+              description: message,
               variant: 'destructive'
             })
           }
         }
       )
-      return identifier
+      return { identifier, mutation }
     },
     [createPostMutation, toast]
   )
@@ -149,10 +151,11 @@ export function useDeletePost() {
           args: [id]
         },
         {
-          onError() {
+          onError(error) {
+            const message = 'shortMessage' in error ? error.shortMessage : error.message
             toast({
-              title: 'Error',
-              description: 'Failed to delete post',
+              title: error.name,
+              description: message,
               variant: 'destructive'
             })
           }

@@ -42,10 +42,10 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient()
 
 export function Web3Provider({ children }: { readonly children: React.ReactNode }) {
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
   const isClient = useIsClient()
   // Fix hydration mismatch
-  const renderTheme = isClient ? (theme === 'light' ? lightTheme() : darkTheme()) : undefined
+  const renderTheme = isClient ? (resolvedTheme === 'light' ? lightTheme() : darkTheme()) : undefined
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

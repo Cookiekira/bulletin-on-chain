@@ -1,7 +1,7 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import { useIsClient } from 'foxact/use-is-client'
 
@@ -13,36 +13,45 @@ import { Button } from './ui/button'
 
 const themes = [
   {
-    label: 'Light',
-    value: 'light',
-    icon: Sun
+    label: 'System',
+    value: 'system',
+    icon: SunMoon
   },
   {
     label: 'Dark',
     value: 'dark',
     icon: Moon
+  },
+  {
+    label: 'Light',
+    value: 'light',
+    icon: Sun
   }
 ]
 
 export function ThemeSwitcher() {
   const { setTheme, theme, resolvedTheme } = useTheme()
-  const ThemeIcon = useMemo(() => themes.find((t) => t.value === theme)?.icon ?? SunMoon, [theme])
 
+  const currentTheme = themes.find((t) => t.value === theme) ?? themes[0]
   const isDark = resolvedTheme === 'dark'
-
   const isClient = useIsClient()
 
-  const toggleTheme = useCallback(
+  const cycleTheme = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      const currentIndex = themes.findIndex((t) => t.value === theme)
+      const nextIndex = (currentIndex + 1) % themes.length
+      // eslint-disable-next-line security/detect-object-injection -- `themes` is a constant
+      const nextTheme = themes[nextIndex].value
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `document.startViewTransition` is not always available
       if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        setTheme(isDark ? 'light' : 'dark')
+        setTheme(nextTheme)
         return
       }
 
       const transition = document.startViewTransition(() => {
         flushSync(() => {
-          setTheme(isDark ? 'light' : 'dark')
+          setTheme(nextTheme)
         })
       })
 
@@ -65,7 +74,7 @@ export function ThemeSwitcher() {
         )
       })
     },
-    [isDark, setTheme]
+    [setTheme, theme]
   )
 
   if (!isClient) {
@@ -80,12 +89,12 @@ export function ThemeSwitcher() {
             type="button"
             size="icon"
             className="group rounded-full bg-gradient-to-b from-zinc-50/50 to-white/90 px-3 py-2 shadow-lg shadow-zinc-800/5 ring-1 ring-zinc-900/5 backdrop-blur transition dark:from-zinc-900/50 dark:to-zinc-800/90 dark:ring-white/10 dark:hover:ring-white/20"
-            onClick={toggleTheme}
+            onClick={cycleTheme}
           >
-            <ThemeIcon className="stroke-zinc-500 p-0.5 transition group-hover:stroke-zinc-700 dark:stroke-zinc-300 dark:group-hover:stroke-zinc-200" />
+            <currentTheme.icon className="stroke-zinc-500 transition group-hover:stroke-zinc-700 dark:stroke-zinc-300 dark:group-hover:stroke-zinc-200" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{themes.find((t) => t.value == theme)?.label ?? 'System'}</TooltipContent>
+        <TooltipContent>{currentTheme.label}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )

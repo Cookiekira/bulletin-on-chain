@@ -9,8 +9,10 @@ export type Bulletin = {
   isDeleted: boolean
 }
 
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 const getAddress = async () => {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDevelopment) {
     try {
       const address = await import('@/ignition/deployments/chain-31337/deployed_addresses.json')
       return address['BulletinBoardModule#BulletinBoard']

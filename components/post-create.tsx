@@ -6,14 +6,28 @@ import { Input } from '@/components/ui/input'
 import { pendingNewPostsAtom, useCreatePost } from '@/store/use-post-store'
 import { useAtom } from 'jotai'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { useAccount } from 'wagmi'
+import { useToast } from '@/hooks/use-toast'
 
 export function PostCreate() {
   const [content, setContent] = useState('')
   const { createPost, isCreatingPost } = useCreatePost()
   const [, setPendingNewPosts] = useAtom(pendingNewPostsAtom)
+  const { isConnected } = useAccount()
+  const { toast } = useToast()
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!isConnected) {
+      toast({
+        title: 'Not connected',
+        description: 'Please connect your wallet to create a post',
+        variant: 'destructive'
+      })
+      return
+    }
+
     const { identifier, mutation } = createPost(content)
     setPendingNewPosts((prev) => [{ identifier, content }, ...prev])
     try {

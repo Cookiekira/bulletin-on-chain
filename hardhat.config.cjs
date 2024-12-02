@@ -1,11 +1,15 @@
-import { vars, type HardhatUserConfig } from 'hardhat/config.js'
-import '@nomicfoundation/hardhat-toolbox-viem'
+/* eslint-disable @typescript-eslint/no-require-imports */
+const { vars } = require('hardhat/config')
+require('@nomicfoundation/hardhat-toolbox-viem')
 
 const SEPOLIA_PRIVATE_KEY = vars.get('SEPOLIA_PRIVATE_KEY')
 const INFURA_API_KEY = vars.get('INFURA_API_KEY')
 const ETHERSCAN_API_KEY = vars.get('ETHERSCAN_API_KEY')
 
-const config: HardhatUserConfig = {
+/**
+ * @type import('hardhat/config').HardhatUserConfig
+ */
+module.exports = {
   solidity: '0.8.27',
   networks: {
     sepolia: {
@@ -19,5 +23,3 @@ const config: HardhatUserConfig = {
     }
   }
 }
-
-export default config

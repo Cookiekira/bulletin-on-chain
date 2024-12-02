@@ -11,8 +11,13 @@ export type Bulletin = {
 
 const getAddress = async () => {
   if (process.env.NODE_ENV === 'development') {
-    const address = await import('@/ignition/deployments/chain-31337/deployed_addresses.json')
-    return address['BulletinBoardModule#BulletinBoard']
+    try {
+      const address = await import('@/ignition/deployments/chain-31337/deployed_addresses.json')
+      return address['BulletinBoardModule#BulletinBoard']
+    } catch (e) {
+      console.error(e)
+      throw new Error('Missing BULLETIN_ADDRESS in .env')
+    }
   }
 
   if (!process.env.NEXT_PUBLIC_BULLETIN_ADDRESS) {

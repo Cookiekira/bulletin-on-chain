@@ -1,5 +1,5 @@
-import type { Bulletin } from '@/app/types'
-import { contractConfig } from '@/app/types'
+import type { Bulletin } from '@/app/config'
+import { contractConfig } from '@/app/config'
 import { useToast } from '@/hooks/use-toast'
 import { nanoid } from 'nanoid'
 import { useCallback, useEffect } from 'react'

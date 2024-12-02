@@ -11,10 +11,6 @@ import { ThemeProvider, useTheme } from 'next-themes'
 import { Provider as JotaiProvider } from 'jotai'
 import { useIsClient } from 'foxact/use-is-client'
 
-if (!process.env.NEXT_PUBLIC_PROJECT_ID) {
-  throw new Error('Missing NEXT_PUBLIC_PROJECT_ID')
-}
-
 const chains: ResolvedRegister['config']['chains'] = [
   {
     ...sepolia,
@@ -35,7 +31,7 @@ if (process.env.NODE_ENV === 'development') {
 
 const config = getDefaultConfig({
   appName: 'Bulletin Board',
-  projectId: process.env.NEXT_PUBLIC_PROJECT_ID, // Get one from https://cloud.walletconnect.com
+  projectId: process.env.NEXT_PUBLIC_PROJECT_ID ?? '', // Get one from https://cloud.walletconnect.com
   chains: chains
 })
 

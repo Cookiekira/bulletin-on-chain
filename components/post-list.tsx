@@ -1,6 +1,6 @@
 'use client'
 
-import { contractConfig, type Bulletin } from '@/app/types'
+import { contractConfig, type Bulletin } from '@/app/config'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
